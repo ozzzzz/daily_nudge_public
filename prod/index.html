@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Daily Nudge Settings</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--tg-theme-hint-color, #999999);
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        input[type="time"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--tg-theme-hint-color, #cccccc);
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--tg-theme-button-color, #3390ec);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #999999);
+            margin-top: 6px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Daily Nudge Setup</h1>
+
+    <form id="settings-form">
+        <div class="form-group">
+            <label>What skill do you want to train?</label>
+            <input type="text" id="skill" placeholder="e.g., Learn Spanish B1→B2" required>
+            <div class="hint">Be specific about your goal</div>
+        </div>
+
+        <div class="form-group">
+            <label>Topics to focus on</label>
+            <textarea id="topics" placeholder="e.g., vocabulary, grammar, conversation" required></textarea>
+            <div class="hint">Comma-separated list of areas</div>
+        </div>
+
+        <div class="form-group">
+            <label>Current focus (optional)</label>
+            <input type="text" id="focus" placeholder="e.g., Complete 5 lessons this week">
+            <div class="hint">Short-term focus for your nudges</div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Nudge time</label>
+                <input type="time" id="nudge-time" value="09:00" required>
+            </div>
+
+            <div class="form-group">
+                <label>GMT Offset</label>
+                <select id="gmt-offset">
+                    <option value="-12">GMT-12</option>
+                    <option value="-11">GMT-11</option>
+                    <option value="-10">GMT-10</option>
+                    <option value="-9">GMT-9</option>
+                    <option value="-8">GMT-8</option>
+                    <option value="-7">GMT-7</option>
+                    <option value="-6">GMT-6</option>
+                    <option value="-5">GMT-5</option>
+                    <option value="-4">GMT-4</option>
+                    <option value="-3">GMT-3</option>
+                    <option value="-2">GMT-2</option>
+                    <option value="-1">GMT-1</option>
+                    <option value="0">GMT</option>
+                    <option value="1">GMT+1</option>
+                    <option value="2">GMT+2</option>
+                    <option value="3">GMT+3</option>
+                    <option value="4">GMT+4</option>
+                    <option value="5">GMT+5</option>
+                    <option value="6">GMT+6</option>
+                    <option value="7">GMT+7</option>
+                    <option value="8">GMT+8</option>
+                    <option value="9">GMT+9</option>
+                    <option value="10">GMT+10</option>
+                    <option value="11">GMT+11</option>
+                    <option value="12">GMT+12</option>
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <script>
+        // API base URL - auto-detect from path
+        const API_BASE = window.location.pathname.includes('/dev/')
+            ? 'https://dev.your-backend.com'  // TODO: replace with actual dev URL
+            : 'https://your-backend.com';      // TODO: replace with actual prod URL
+
+        // Initialize Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Form validation
+        function validateForm() {
+            const skill = document.getElementById('skill').value.trim();
+            const topics = document.getElementById('topics').value.trim();
+            const nudgeTime = document.getElementById('nudge-time').value;
+            const isValid = skill && topics && nudgeTime;
+
+            if (isValid) {
+                tg.MainButton.setText('Save Settings');
+                tg.MainButton.show();
+            } else {
+                tg.MainButton.hide();
+            }
+        }
+
+        // Listen for input changes
+        document.getElementById('skill').addEventListener('input', validateForm);
+        document.getElementById('topics').addEventListener('input', validateForm);
+        document.getElementById('nudge-time').addEventListener('change', validateForm);
+
+        // Handle main button click
+        tg.MainButton.onClick(() => {
+            const offset = parseInt(document.getElementById('gmt-offset').value);
+            const timezone = offset === 0 ? 'GMT' : (offset > 0 ? `GMT+${offset}` : `GMT${offset}`);
+
+            const data = {
+                skill: document.getElementById('skill').value.trim(),
+                topics: document.getElementById('topics').value.trim().split(',').map(t => t.trim()).filter(t => t),
+                nudge_times: [document.getElementById('nudge-time').value],
+                timezone: timezone,
+                focus: document.getElementById('focus').value.trim() || null
+            };
+            tg.sendData(JSON.stringify(data));
+        });
+
+        // Auto-detect user's timezone
+        const userOffset = -new Date().getTimezoneOffset() / 60;
+        const clampedOffset = Math.max(-12, Math.min(12, Math.round(userOffset)));
+        document.getElementById('gmt-offset').value = clampedOffset.toString();
+
+        // Initial validation
+        validateForm();
+    </script>
+</body>
+</html>
