@@ -4,8 +4,8 @@ Public-facing Telegram Mini App pages hosted via GitHub Pages.
 
 ## URLs
 
-- **Dev:** https://ozzzzz.github.io/daily_nudge_public/dev/
-- **Prod:** https://ozzzzz.github.io/daily_nudge_public/prod/
+- **Dev:** https://bogdanhas.fun/daily_nudge_public/dev/
+- **Prod:** https://bogdanhas.fun/daily_nudge_public/prod/
 
 ## Deployment
 
