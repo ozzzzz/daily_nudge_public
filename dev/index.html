@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -99,8 +100,9 @@
         }
     </style>
 </head>
+
 <body>
-    <h1>Daily Nudge Setup</h1>
+    <h1>Daily Nudge Setup v1</h1>
 
     <div id="loading" class="loading">Loading settings...</div>
 
@@ -113,7 +115,9 @@
 
         <div class="form-group">
             <label>Learning focus</label>
-            <textarea id="focus" placeholder="e.g., Learn most common words, around 10 each time. Place them in real scenario context." required></textarea>
+            <textarea id="focus"
+                placeholder="e.g., Learn most common words, around 10 each time. Place them in real scenario context."
+                required></textarea>
             <div class="hint">Describe how you want to learn: pace, style, examples</div>
         </div>
 
@@ -246,7 +250,6 @@
 
         // Handle main button click
         tg.MainButton.onClick(() => {
-            tg.showAlert('MainButton clicked');
             const offset = parseInt(document.getElementById('gmt-offset').value);
             const timezone = offset === 0 ? 'GMT' : (offset > 0 ? `GMT+${offset}` : `GMT${offset}`);
 
@@ -257,15 +260,7 @@
                 focus: document.getElementById('focus').value.trim()
             };
 
-            // Save to CloudStorage, but don't block sendData on it
-            tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(data), (err) => {
-                if (err) {
-                    tg.showAlert('CloudStorage error: ' + err);
-                }
-            });
-
-            // Send data to bot immediately
-            tg.showAlert('Calling sendData...');
+            // Send data to bot - this closes the webapp
             tg.sendData(JSON.stringify(data));
         });
 
@@ -273,4 +268,5 @@
         loadSettings();
     </script>
 </body>
+
 </html>
