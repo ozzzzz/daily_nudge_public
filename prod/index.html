@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -56,7 +57,7 @@
 
         textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 120px;
         }
 
         .hint {
@@ -87,12 +88,25 @@
             background-position: right 12px center;
             padding-right: 36px;
         }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     <h1>Daily Nudge Setup</h1>
 
-    <form id="settings-form">
+    <div id="loading" class="loading">Loading settings...</div>
+
+    <form id="settings-form" class="hidden">
         <div class="form-group">
             <label>What skill do you want to train?</label>
             <input type="text" id="skill" placeholder="e.g., Learn Spanish B1→B2" required>
@@ -100,15 +114,11 @@
         </div>
 
         <div class="form-group">
-            <label>Topics to focus on</label>
-            <textarea id="topics" placeholder="e.g., vocabulary, grammar, conversation" required></textarea>
-            <div class="hint">Comma-separated list of areas</div>
-        </div>
-
-        <div class="form-group">
-            <label>Current focus (optional)</label>
-            <input type="text" id="focus" placeholder="e.g., Complete 5 lessons this week">
-            <div class="hint">Short-term focus for your nudges</div>
+            <label>Learning focus</label>
+            <textarea id="focus"
+                placeholder="e.g., Learn most common words, around 10 each time. Place them in real scenario context."
+                required></textarea>
+            <div class="hint">Describe how you want to learn: pace, style, examples</div>
         </div>
 
         <div class="row">
@@ -151,22 +161,79 @@
     </form>
 
     <script>
-        // API base URL - auto-detect from path
-        const API_BASE = window.location.pathname.includes('/dev/')
-            ? 'https://dev.your-backend.com'  // TODO: replace with actual dev URL
-            : 'https://your-backend.com';      // TODO: replace with actual prod URL
+        const STORAGE_KEY = 'daily_nudge_settings';
 
         // Initialize Telegram Web App
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
+        // Parse timezone string to offset number (e.g., "GMT+3" -> 3, "GMT-5" -> -5)
+        function parseTimezone(tz) {
+            if (!tz || tz === 'GMT') return 0;
+            const match = tz.match(/GMT([+-]\d+)/);
+            return match ? parseInt(match[1]) : 0;
+        }
+
+        // Populate form with saved settings
+        function populateForm(settings) {
+            if (settings.skill) {
+                document.getElementById('skill').value = settings.skill;
+            }
+            if (settings.focus) {
+                document.getElementById('focus').value = settings.focus;
+            }
+            if (settings.nudge_times && settings.nudge_times.length > 0) {
+                document.getElementById('nudge-time').value = settings.nudge_times[0];
+            }
+            if (settings.timezone) {
+                document.getElementById('gmt-offset').value = parseTimezone(settings.timezone).toString();
+            }
+        }
+
+        // Load settings from CloudStorage
+        function loadSettings() {
+            tg.CloudStorage.getItem(STORAGE_KEY, (err, value) => {
+                // Hide loading, show form
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('settings-form').classList.remove('hidden');
+
+                if (err) {
+                    console.error('CloudStorage error:', err);
+                    // Fall back to auto-detect timezone
+                    autoDetectTimezone();
+                } else if (value) {
+                    try {
+                        const settings = JSON.parse(value);
+                        populateForm(settings);
+                        console.log('Loaded settings from CloudStorage:', settings);
+                    } catch (e) {
+                        console.error('Failed to parse settings:', e);
+                        autoDetectTimezone();
+                    }
+                } else {
+                    // No saved settings, auto-detect timezone
+                    autoDetectTimezone();
+                }
+
+                // Validate form after loading
+                validateForm();
+            });
+        }
+
+        // Auto-detect user's timezone
+        function autoDetectTimezone() {
+            const userOffset = -new Date().getTimezoneOffset() / 60;
+            const clampedOffset = Math.max(-12, Math.min(12, Math.round(userOffset)));
+            document.getElementById('gmt-offset').value = clampedOffset.toString();
+        }
+
         // Form validation
         function validateForm() {
             const skill = document.getElementById('skill').value.trim();
-            const topics = document.getElementById('topics').value.trim();
+            const focus = document.getElementById('focus').value.trim();
             const nudgeTime = document.getElementById('nudge-time').value;
-            const isValid = skill && topics && nudgeTime;
+            const isValid = skill && focus && nudgeTime;
 
             if (isValid) {
                 tg.MainButton.setText('Save Settings');
@@ -178,7 +245,7 @@
 
         // Listen for input changes
         document.getElementById('skill').addEventListener('input', validateForm);
-        document.getElementById('topics').addEventListener('input', validateForm);
+        document.getElementById('focus').addEventListener('input', validateForm);
         document.getElementById('nudge-time').addEventListener('change', validateForm);
 
         // Handle main button click
@@ -188,21 +255,21 @@
 
             const data = {
                 skill: document.getElementById('skill').value.trim(),
-                topics: document.getElementById('topics').value.trim().split(',').map(t => t.trim()).filter(t => t),
                 nudge_times: [document.getElementById('nudge-time').value],
                 timezone: timezone,
-                focus: document.getElementById('focus').value.trim() || null
+                focus: document.getElementById('focus').value.trim()
             };
+
+            // Save to CloudStorage for next time (fire and forget)
+            tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+            // Send data to bot - this closes the webapp
             tg.sendData(JSON.stringify(data));
         });
 
-        // Auto-detect user's timezone
-        const userOffset = -new Date().getTimezoneOffset() / 60;
-        const clampedOffset = Math.max(-12, Math.min(12, Math.round(userOffset)));
-        document.getElementById('gmt-offset').value = clampedOffset.toString();
-
-        // Initial validation
-        validateForm();
+        // Start by loading settings
+        loadSettings();
     </script>
 </body>
+
 </html>
