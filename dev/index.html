@@ -56,7 +56,7 @@
 
         textarea {
             resize: vertical;
-            min-height: 80px;
+            min-height: 120px;
         }
 
         .hint {
@@ -112,15 +112,9 @@
         </div>
 
         <div class="form-group">
-            <label>Topics to focus on</label>
-            <textarea id="topics" placeholder="e.g., vocabulary, grammar, conversation" required></textarea>
-            <div class="hint">Comma-separated list of areas</div>
-        </div>
-
-        <div class="form-group">
-            <label>Current focus (optional)</label>
-            <input type="text" id="focus" placeholder="e.g., Complete 5 lessons this week">
-            <div class="hint">Short-term focus for your nudges</div>
+            <label>Learning focus</label>
+            <textarea id="focus" placeholder="e.g., Learn most common words, around 10 each time. Place them in real scenario context." required></textarea>
+            <div class="hint">Describe how you want to learn: pace, style, examples</div>
         </div>
 
         <div class="row">
@@ -182,9 +176,6 @@
             if (settings.skill) {
                 document.getElementById('skill').value = settings.skill;
             }
-            if (settings.topics && Array.isArray(settings.topics)) {
-                document.getElementById('topics').value = settings.topics.join(', ');
-            }
             if (settings.focus) {
                 document.getElementById('focus').value = settings.focus;
             }
@@ -236,9 +227,9 @@
         // Form validation
         function validateForm() {
             const skill = document.getElementById('skill').value.trim();
-            const topics = document.getElementById('topics').value.trim();
+            const focus = document.getElementById('focus').value.trim();
             const nudgeTime = document.getElementById('nudge-time').value;
-            const isValid = skill && topics && nudgeTime;
+            const isValid = skill && focus && nudgeTime;
 
             if (isValid) {
                 tg.MainButton.setText('Save Settings');
@@ -250,32 +241,31 @@
 
         // Listen for input changes
         document.getElementById('skill').addEventListener('input', validateForm);
-        document.getElementById('topics').addEventListener('input', validateForm);
+        document.getElementById('focus').addEventListener('input', validateForm);
         document.getElementById('nudge-time').addEventListener('change', validateForm);
 
         // Handle main button click
         tg.MainButton.onClick(() => {
+            tg.showAlert('MainButton clicked');
             const offset = parseInt(document.getElementById('gmt-offset').value);
             const timezone = offset === 0 ? 'GMT' : (offset > 0 ? `GMT+${offset}` : `GMT${offset}`);
 
             const data = {
                 skill: document.getElementById('skill').value.trim(),
-                topics: document.getElementById('topics').value.trim().split(',').map(t => t.trim()).filter(t => t),
                 nudge_times: [document.getElementById('nudge-time').value],
                 timezone: timezone,
-                focus: document.getElementById('focus').value.trim() || null
+                focus: document.getElementById('focus').value.trim()
             };
 
-            // Save to CloudStorage for next time
+            // Save to CloudStorage, but don't block sendData on it
             tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(data), (err) => {
                 if (err) {
-                    console.error('Failed to save to CloudStorage:', err);
-                } else {
-                    console.log('Saved settings to CloudStorage');
+                    tg.showAlert('CloudStorage error: ' + err);
                 }
             });
 
-            // Send to bot
+            // Send data to bot immediately
+            tg.showAlert('Calling sendData...');
             tg.sendData(JSON.stringify(data));
         });
 
