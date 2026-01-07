@@ -102,7 +102,7 @@
 </head>
 
 <body>
-    <h1>Daily Nudge Setup v1</h1>
+    <h1>Daily Nudge Setup</h1>
 
     <div id="loading" class="loading">Loading settings...</div>
 
@@ -259,6 +259,9 @@
                 timezone: timezone,
                 focus: document.getElementById('focus').value.trim()
             };
+
+            // Save to CloudStorage for next time (fire and forget)
+            tg.CloudStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
             // Send data to bot - this closes the webapp
             tg.sendData(JSON.stringify(data));
