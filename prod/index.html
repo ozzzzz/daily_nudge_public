@@ -108,6 +108,14 @@
 
     <form id="settings-form" class="hidden">
         <div class="form-group">
+            <label>Start from template</label>
+            <select id="template-select">
+                <option value="">Select a template...</option>
+            </select>
+            <div class="hint">Or customize your own below</div>
+        </div>
+
+        <div class="form-group">
             <label>What skill do you want to train?</label>
             <input type="text" id="skill" value="Learn Spanish from B1 to B2" required>
             <div class="hint">Be specific about your goal</div>
@@ -161,6 +169,45 @@
 
     <script>
         const STORAGE_KEY = 'daily_nudge_settings';
+
+        // Preset templates
+        const PRESETS = [
+            {
+                name: 'Learn Spanish B1→B2',
+                skill: 'Learn Spanish from B1 to B2',
+                focus: 'Learn most common words, around 10 each time. Place them in real scenario context with example sentences.'
+            },
+            {
+                name: 'Learn Japanese basics',
+                skill: 'Learn Japanese basics',
+                focus: 'Teach hiragana, basic phrases, and common vocabulary. Include pronunciation tips and cultural context.'
+            },
+            {
+                name: 'Improve English vocabulary',
+                skill: 'Improve English vocabulary',
+                focus: 'Introduce advanced vocabulary and idioms. Show usage in professional and casual contexts.'
+            },
+            {
+                name: 'Daily journaling',
+                skill: 'Daily journaling practice',
+                focus: 'Send reflective prompts about my day, goals, and feelings. Vary between gratitude, planning, and introspection.'
+            },
+            {
+                name: 'Deep work focus',
+                skill: 'Deep work and focus training',
+                focus: 'Remind me to eliminate distractions and focus deeply. Include time-boxing tips and motivation.'
+            },
+            {
+                name: 'Mindfulness practice',
+                skill: 'Mindfulness and meditation',
+                focus: 'Guide short breathing exercises or mindfulness moments. Keep it under 2 minutes and calming.'
+            },
+            {
+                name: 'Fitness motivation',
+                skill: 'Fitness and movement habits',
+                focus: 'Send workout inspiration, exercise tips, or movement reminders. Keep it energizing and actionable.'
+            }
+        ];
 
         // Initialize Telegram Web App
         const tg = window.Telegram.WebApp;
@@ -227,6 +274,33 @@
             document.getElementById('gmt-offset').value = clampedOffset.toString();
         }
 
+        // Populate template dropdown
+        function populateTemplates() {
+            const select = document.getElementById('template-select');
+            PRESETS.forEach((preset, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = preset.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Handle template selection
+        function handleTemplateSelect(e) {
+            const index = e.target.value;
+            if (index === '') return;
+
+            const preset = PRESETS[index];
+            document.getElementById('skill').value = preset.skill;
+            document.getElementById('focus').value = preset.focus;
+
+            // Reset dropdown to placeholder
+            e.target.value = '';
+
+            // Trigger validation
+            validateForm();
+        }
+
         // Form validation
         function validateForm() {
             const skill = document.getElementById('skill').value.trim();
@@ -246,6 +320,10 @@
         document.getElementById('skill').addEventListener('input', validateForm);
         document.getElementById('focus').addEventListener('input', validateForm);
         document.getElementById('nudge-time').addEventListener('change', validateForm);
+        document.getElementById('template-select').addEventListener('change', handleTemplateSelect);
+
+        // Populate templates dropdown
+        populateTemplates();
 
         // Handle main button click
         tg.MainButton.onClick(() => {
